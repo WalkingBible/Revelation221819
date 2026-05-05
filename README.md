@@ -1,4 +1,4 @@
-   <"계시록을 가지고 다니지 말고, 마음에 기록하면 될 것이다. 어렵지 않다">
+   <"계시록을 가지고 다니지 말고, 마음에 기록하면 될 것이다. 어렵지 않다"> <"절멸모드에서 실시간 오타표시를 엔터 후 표시하는 것으로 변경">
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -32,7 +32,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- Icon Components (replaces lucide-react) ---
+        // --- Icon Components ---
         const IconWrapper = ({ children, size = 20, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
         );
@@ -49,6 +49,7 @@
           // --- State Management ---
           const [currentChapter, setCurrentChapter] = useState(1);
           const [typingTexts, setTypingTexts] = useState({});
+          const [submittedVerses, setSubmittedVerses] = useState({}); // Track which verses have been "Enter"ed
           const [showReference, setShowReference] = useState(true);
           const [randomBlanks, setRandomBlanks] = useState({});
           const [showBlanks, setShowBlanks] = useState(false);
@@ -56,7 +57,7 @@
           const [mode, setMode] = useState('verse'); // 'verse', 'expert', 'random'
           const [expertText, setExpertText] = useState('');
           const [expertResult, setExpertResult] = useState(null);
-          const [randomVerse, setRandomVerse] = useState(null); // { chapter, verse, text }
+          const [randomVerse, setRandomVerse] = useState(null); 
 
           // --- Korean Jamo Decomposer ---
           const CHOSEONG = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
@@ -91,7 +92,7 @@
               return refJamo.startsWith(typedJamo);
           };
 
-          // --- Data & Memoization ---
+          // --- Data ---
           const revelationText = {
             1: {
                 1: "예수 그리스도의 계시라 이는 하나님이 그에게 주사 반드시 속히 될 일을 그 종들에게 보이시려고 그 천사를 그 종 요한에게 보내어 지시하신 것이라",
@@ -552,20 +553,19 @@
 
           // --- Effects ---
           useEffect(() => {
-              // Chapter change effect
               const initialTypingTexts = {};
               Object.keys(currentVerses).forEach(verse => { initialTypingTexts[verse] = ''; });
               setTypingTexts(initialTypingTexts);
+              setSubmittedVerses({});
               setRandomBlanks({});
               setShowBlanks(false);
               setExpertText('');
               setExpertResult(null);
               setRandomVerse(null);
-              setMode('verse'); // Always reset to verse mode on chapter change
+              setMode('verse');
           }, [currentChapter]);
 
           useEffect(() => {
-              // Accuracy calculation effect
               if (mode !== 'verse') return;
               let totalChars = 0;
               let correctChars = 0;
@@ -635,7 +635,7 @@
           
           const getStyledText = (reference, typed, verseKey) => {
               if (mode === 'verse' && !showReference && !showBlanks) return '';
-              if (mode === 'random' && !showReference) return ''; // Random mode check
+              if (mode === 'random' && !showReference) return '';
 
               if (mode === 'verse' && showBlanks && randomBlanks[verseKey]) {
                   const words = reference.split(' ');
@@ -678,10 +678,16 @@
               return '';
           };
 
-          const getTypingStyle = (reference, typed) => {
+          const getTypingStyle = (reference, typed, isSubmitted) => {
+              // Only show error styling if the user has pressed Enter (isSubmitted)
+              if (!isSubmitted) {
+                return <span>{typed}</span>;
+              }
+
               if (isKoreanTypingInProgress(reference, typed)) {
                   return <span>{typed}</span>;
               }
+
               const matching = getAdvancedMatching(reference, typed);
               return typed.split('').map((char, i) => {
                   const matchInfo = matching.find(m => m.typedIndex === i);
@@ -695,18 +701,28 @@
 
           const handleTypingChange = (verseKey, value) => {
               setTypingTexts(prev => ({ ...prev, [verseKey]: value }));
+              // If user starts typing again after submission, hide errors until next Enter
+              if (submittedVerses[verseKey]) {
+                setSubmittedVerses(prev => ({ ...prev, [verseKey]: false }));
+              }
           };
 
           const handleKeyDown = (e, currentVerseKey) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  if (mode !== 'verse') return; // Only apply to verse mode
+                  
+                  // Mark as submitted to show errors
+                  setSubmittedVerses(prev => ({ ...prev, [currentVerseKey]: true }));
 
-                  const verses = Object.keys(currentVerses).map(Number).sort((a, b) => a - b);
-                  const currentIndex = verses.indexOf(parseInt(currentVerseKey));
-                  if (currentIndex < verses.length - 1) {
-                      const nextVerse = verses[currentIndex + 1];
-                      document.querySelector(`[data-verse="${nextVerse}"]`)?.focus();
+                  if (mode === 'verse') {
+                      const verses = Object.keys(currentVerses).map(Number).sort((a, b) => a - b);
+                      const currentIndex = verses.indexOf(parseInt(currentVerseKey));
+                      if (currentIndex < verses.length - 1) {
+                          const nextVerse = verses[currentIndex + 1];
+                          document.querySelector(`[data-verse="${nextVerse}"]`)?.focus();
+                      }
+                  } else if (mode === 'random') {
+                      // Check accuracy or logic for random mode if needed
                   }
               }
           };
@@ -714,11 +730,11 @@
           const resetTyping = () => {
               const resetTexts = {};
               Object.keys(currentVerses).forEach(verse => { resetTexts[verse] = ''; });
-              resetTexts['random'] = ''; // Also clear random typing text
+              resetTexts['random'] = '';
               setTypingTexts(resetTexts);
+              setSubmittedVerses({});
               setExpertText('');
               setExpertResult(null);
-              // Do not reset randomVerse here, only clear the text
           };
           
           const toggleRandomBlanks = () => {
@@ -748,7 +764,7 @@
 
           const toggleMode = () => {
               setMode(prevMode => (prevMode === 'verse' ? 'expert' : 'verse'));
-              setRandomVerse(null); // Clear random verse when switching
+              setRandomVerse(null);
               resetTyping();
           };
 
@@ -764,8 +780,8 @@
                   text: revelationText[randomChapterKey][randomVerseKey]
               });
               setMode('random');
-              // Removed: setShowReference(true); // Let user's preference persist
               setTypingTexts(prev => ({ ...prev, random: '' }));
+              setSubmittedVerses({});
               setExpertResult(null);
           };
 
@@ -788,7 +804,7 @@
 
           // --- Render ---
           return (
-              <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white min-h-screen pb-24">
+              <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white min-h-screen pb-32">
                   <header className="mb-6 border-b pb-6">
                       <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-2">요한계시록 암기 타이핑</h1>
                       <p className="text-center text-gray-500">말씀을 타이핑하며 암송하고 묵상하는 시간</p>
@@ -800,7 +816,7 @@
                               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
                           >
                               {Array.from({ length: 22 }, (_, i) => i + 1).map(chapter => (
-                                  <option key={chapter} value={chapter}>{chapter}장</option>
+                                  chapter in revelationText && <option key={chapter} value={chapter}>{chapter}장</option>
                               ))}
                           </select>
                       </div>
@@ -815,19 +831,24 @@
                                       <div className="mb-4 p-4 bg-gray-50 rounded-lg min-h-[60px] leading-relaxed text-lg">
                                           {getStyledText(text, typingTexts[verse] || '', verse)}
                                       </div>
-                                      <div className="relative border border-gray-300 rounded-lg">
+                                      <div className="relative border border-gray-300 rounded-lg overflow-hidden bg-white">
                                           <textarea
                                               data-verse={verse}
                                               value={typingTexts[verse] || ''}
                                               onChange={(e) => handleTypingChange(verse, e.target.value)}
                                               onKeyDown={(e) => handleKeyDown(e, verse)}
-                                              placeholder="여기에 타이핑하세요... (Enter: 다음 절로 이동)"
+                                              placeholder="여기에 타이핑하세요... (Enter를 눌러 오타를 확인하고 다음 절로 이동)"
                                               className="w-full p-4 focus:ring-2 focus:ring-blue-500 rounded-lg resize-none min-h-[100px] text-lg leading-relaxed typing-textarea relative z-10"
                                           />
                                           <div className="absolute top-0 left-0 w-full h-full p-4 pointer-events-none text-lg leading-relaxed whitespace-pre-wrap z-20">
-                                            {getTypingStyle(text, typingTexts[verse] || '')}
+                                            {getTypingStyle(text, typingTexts[verse] || '', submittedVerses[verse])}
                                           </div>
                                       </div>
+                                      {submittedVerses[verse] && (
+                                          <div className="mt-2 text-xs text-blue-500 flex items-center gap-1">
+                                            <RotateCcw size={12}/> 수정 시 오타 표시가 사라지며 Enter를 다시 누르면 확인됩니다.
+                                          </div>
+                                      )}
                                   </div>
                               ))
                           ) : ( <p className="text-center text-gray-500">선택한 장의 본문이 없습니다.</p> )
@@ -858,16 +879,17 @@
                                   <div className="mb-4 p-4 bg-gray-50 rounded-lg min-h-[60px] leading-relaxed text-lg">
                                       {getStyledText(randomVerse.text, typingTexts['random'] || '', 'random')}
                                   </div>
-                                  <div className="relative border border-gray-300 rounded-lg">
+                                  <div className="relative border border-gray-300 rounded-lg overflow-hidden bg-white">
                                       <textarea
                                           data-verse="random"
                                           value={typingTexts['random'] || ''}
                                           onChange={(e) => handleTypingChange('random', e.target.value)}
-                                          placeholder="여기에 타이핑하세요..."
+                                          onKeyDown={(e) => handleKeyDown(e, 'random')}
+                                          placeholder="여기에 타이핑하세요... (Enter를 눌러 오타 확인)"
                                           className="w-full p-4 focus:ring-2 focus:ring-blue-500 rounded-lg resize-none min-h-[100px] text-lg leading-relaxed typing-textarea relative z-10"
                                       />
                                       <div className="absolute top-0 left-0 w-full h-full p-4 pointer-events-none text-lg leading-relaxed whitespace-pre-wrap z-20">
-                                        {getTypingStyle(randomVerse.text, typingTexts['random'] || '')}
+                                        {getTypingStyle(randomVerse.text, typingTexts['random'] || '', submittedVerses['random'])}
                                       </div>
                                   </div>
                               </div>
@@ -877,8 +899,7 @@
                       )}
                   </main>
                   
-                  {/* Z-index 30 applied here to fix overlap bug */}
-                  <footer className="fixed bottom-0 left-0 right-0 p-3 bg-white/80 backdrop-blur-sm border-t z-30">
+                  <footer className="fixed bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-md border-t z-30 shadow-lg">
                       <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-center items-center">
                           <button onClick={toggleMode} className="flex items-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 smooth-transition text-sm sm:text-base">
                               {mode === 'verse' ? <ChevronsRight/> : <Edit3/>}
@@ -908,7 +929,7 @@
                               <RotateCcw />
                               초기화
                           </button>
-                          <div className="bg-blue-100 px-6 py-2 rounded-full shadow">
+                          <div className="bg-blue-100 px-6 py-2 rounded-full shadow border border-blue-200">
                               <span className="text-lg font-semibold text-blue-800">
                                   암기율: {mode === 'verse' ? `${accuracy}%` : '-'}
                               </span>
@@ -919,10 +940,6 @@
           );
         };
 
-        // Note: The 'revelationText' object is very large. For brevity in this code block,
-        // it's represented by a comment. In a real scenario, this object would contain
-        // the full text of all 22 chapters of Revelation.
-        
         ReactDOM.render(<RevelationTypingApp />, document.getElementById('root'));
     </script>
 </body>

@@ -1,4 +1,5 @@
    <"계시록을 가지고 다니지 말고, 마음에 기록하면 될 것이다. 어렵지 않다"> <"성경 맞춤법에서 계시록 소책자 맞춤법으로 변경 중">
+<!DOCTYPE html>   
 <html lang="ko">
 <head>
     <meta charset="UTF-8">

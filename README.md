@@ -14,8 +14,8 @@ layout: null
     <!-- React Libraries -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <!-- Stable Babel standalone version for classic JSX compilation -->
-    <script src="https://unpkg.com/@babel/standalone@7.15.8/babel.min.js"></script>
+    <!-- Explicitly load Babel 6 to completely prevent modern import syntax creation in browser -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
     <style>
         /* Custom styles for better textarea overlay and overall look */
         body {
@@ -34,9 +34,7 @@ layout: null
 <body class="antialiased">
     <div id="root"></div>
 
-    <script type="text/babel" data-presets="react">
-        /** @jsxRuntime classic */
-        /** @jsx React.createElement */
+    <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
         // --- Icon Components ---
@@ -551,7 +549,18 @@ layout: null
                 21: "주 예수의 은혜가 모든 자들에게 있을찌어다 아멘"
             }
           };
+          // Generate placeholder text for other chapters so the UI elements can load gracefully
+          for (let i = 1; i <= 22; i++) {
+              if (!revelationText[i]) {
+                  revelationText[i] = {
+                      1: `요한계시록 ${i}장 1절 본문 예시입니다. (추후 전체 데이터 추가 가능)`
+                  };
+              }
+          }
+          
           const currentVerses = revelationText[currentChapter] || {};
+          const availableChapters = useMemo(() => Object.keys(revelationText).map(Number).sort((a, b) => a - b), []);
+          
           const expertReferenceText = useMemo(() => {
               return Object.entries(currentVerses)
                   .map(([verse, text]) => `${verse} ${text}`)
@@ -686,7 +695,6 @@ layout: null
           };
 
           const getTypingStyle = (reference, typed, isSubmitted) => {
-              // Only show error styling if the user has pressed Enter (isSubmitted)
               if (!isSubmitted) {
                 return <span>{typed}</span>;
               }
@@ -708,7 +716,6 @@ layout: null
 
           const handleTypingChange = (verseKey, value) => {
               setTypingTexts(prev => ({ ...prev, [verseKey]: value }));
-              // If user starts typing again after submission, hide errors until next Enter
               if (submittedVerses[verseKey]) {
                 setSubmittedVerses(prev => ({ ...prev, [verseKey]: false }));
               }
@@ -718,7 +725,6 @@ layout: null
               if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   
-                  // Mark as submitted to show errors
                   setSubmittedVerses(prev => ({ ...prev, [currentVerseKey]: true }));
 
                   if (mode === 'verse') {
@@ -726,10 +732,9 @@ layout: null
                       const currentIndex = verses.indexOf(parseInt(currentVerseKey));
                       if (currentIndex < verses.length - 1) {
                           const nextVerse = verses[currentIndex + 1];
-                          document.querySelector(`[data-verse="${nextVerse}"]`)?.focus();
+                          const element = document.querySelector(`[data-verse="${nextVerse}"]`);
+                          if (element) element.focus();
                       }
-                  } else if (mode === 'random') {
-                      // Check accuracy or logic for random mode if needed
                   }
               }
           };
@@ -822,7 +827,7 @@ layout: null
                               disabled={mode === 'random'}
                               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base disabled:bg-gray-100 disabled:cursor-not-allowed"
                           >
-                              {Array.from({ length: 22 }, (_, i) => i + 1).map(chapter => (
+                              {availableChapters.map(chapter => (
                                   chapter in revelationText && <option key={chapter} value={chapter}>{chapter}장</option>
                               ))}
                           </select>
@@ -906,7 +911,7 @@ layout: null
                       )}
                   </main>
                   
-                  <footer className="fixed bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-md border-t z-30 shadow-lg">
+                  <footer className="fixed bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-sm border-t z-30 shadow-lg">
                       <div className="max-w-4xl mx-auto flex flex-wrap gap-2 justify-center items-center">
                           <button onClick={toggleMode} className="flex items-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 smooth-transition text-sm sm:text-base">
                               {mode === 'verse' ? <ChevronsRight/> : <Edit3/>}
@@ -951,4 +956,3 @@ layout: null
     </script>
 </body>
 </html>
-

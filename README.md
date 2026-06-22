@@ -3,6 +3,7 @@
 ---
 layout: null
 ---
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -13,8 +14,8 @@ layout: null
     <!-- React Libraries -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <!-- Babel for JSX transpilation -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Stable Babel standalone version for classic JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone@7.15.8/babel.min.js"></script>
     <style>
         /* Custom styles for better textarea overlay and overall look */
         body {
@@ -33,7 +34,9 @@ layout: null
 <body class="antialiased">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script type="text/babel" data-presets="react">
+        /** @jsxRuntime classic */
+        /** @jsx React.createElement */
         const { useState, useEffect, useMemo } = React;
 
         // --- Icon Components ---
@@ -42,7 +45,7 @@ layout: null
         );
         const Eye = (props) => (<IconWrapper {...props}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></IconWrapper>);
         const EyeOff = (props) => (<IconWrapper {...props}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></IconWrapper>);
-        const Shuffle = (props) => (<IconWrapper {...props}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" /><path d="m18 2 4 4-4 4" /><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" /><path d="M22 18h-5.9c1.3 0 2.6-.7 3.3-1.8l.5-.8" /><path d="m18 22-4-4 4-4" /></IconWrapper>);
+        const Shuffle = (props) => (<IconWrapper {...props}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" /><path d="m18 2 4 4-4 4" /><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" /><path d="M22 18h-5.9c1.3 0-2.6-.7-3.3-1.8l-.5-.8" /><path d="m18 22-4-4 4-4" /></IconWrapper>);
         const RotateCcw = (props) => (<IconWrapper {...props}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></IconWrapper>);
         const ChevronsRight = (props) => (<IconWrapper {...props}><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></IconWrapper>);
         const Edit3 = (props) => (<IconWrapper {...props}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></IconWrapper>);

@@ -1,5 +1,3 @@
-   <"계시록을 가지고 다니지 말고, 마음에 기록하면 될 것이다. 어렵지 않다"> <"성경 맞춤법에서 계시록 소책자 맞춤법으로 변경 중.">
-
 ---
 layout: null
 ---
@@ -549,6 +547,7 @@ layout: null
                 21: "주 예수의 은혜가 모든 자들에게 있을찌어다 아멘"
             }
           };
+         
           // Generate placeholder text for other chapters so the UI elements can load gracefully
           for (let i = 1; i <= 22; i++) {
               if (!revelationText[i]) {
@@ -819,7 +818,14 @@ layout: null
               <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white min-h-screen pb-32">
                   <header className="mb-6 border-b pb-6">
                       <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-2">요한계시록 암기 타이핑</h1>
-                      <p className="text-center text-gray-500">말씀을 타이핑하며 암송하고 묵상하는 시간</p>
+                      <div className="my-3 text-center space-y-1">
+                          <p className="text-sm font-medium text-blue-600 bg-blue-50 inline-block px-3 py-1 rounded-full">
+                              “계시록을 가지고 다니지 말고, 마음에 기록하면 될 것이다. 어렵지 않다”
+                          </p>
+                          <p className="text-xs text-gray-400 block">
+                              * 성경 맞춤법에서 계시록 소책자 맞춤법으로 변경 중
+                          </p>
+                      </div>
                       <div className="mt-6 flex flex-wrap gap-2 justify-center items-center">
                           <select 
                               value={currentChapter} 
